@@ -1,0 +1,46 @@
+
+spring:
+  application:
+    name: notification-routing
+  datasource:
+    url: jdbc:h2:mem:notifdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+server:
+  port: 8080
+
+routing:
+  rules:
+    - name: "on-user-registered"
+      when:
+        eventType: "USER_REGISTERED"
+      then:
+        channels: ["EMAIL","SMS"]
+    - name: "on-user-deleted"
+      when:
+        eventType: "USER_DELETED"
+      then:
+        channels: [ "SMS" ]
+    - name: "on-high-priority"
+      when:
+        priority: "HIGH"
+      then:
+        channels: ["PUSH"]
+    - name: "on-low-priority"
+      when:
+        priority: "LOW"
+      then:
+        channels: [ "EMAIL" ]
+retry:
+  maxAttempts: 4
+
