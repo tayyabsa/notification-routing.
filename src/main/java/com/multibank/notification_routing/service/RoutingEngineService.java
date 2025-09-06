@@ -5,6 +5,7 @@ import com.multibank.notification_routing.service.channel.ChannelFactory;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.Channel;
 import com.multibank.notification_routing.utils.EventType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
@@ -13,11 +14,12 @@ import java.util.Set;
 
 @Service
 public class RoutingEngineService {
-    private final RoutingConfig routingConfig;
 
-    public RoutingEngineService(RoutingConfig routingConfig) {
-        this.routingConfig = routingConfig;
-    }
+    @Autowired
+    private ChannelFactory channelFactory;
+
+    @Autowired
+    private RoutingConfig routingConfig;
 
     public List<NotificationChannel> route(EventType eventType, String priority) {
         Set<Channel> channels = new LinkedHashSet<>();
@@ -29,7 +31,7 @@ public class RoutingEngineService {
             }
         }
 
-        return ChannelFactory.getChannels(channels);
+        return channelFactory.getChannels(channels);
     }
 
     private boolean matchesRule(RoutingConfig.When when, EventType eventType, String priority) {

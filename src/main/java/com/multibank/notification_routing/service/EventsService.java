@@ -45,7 +45,6 @@ public class EventsService {
             eventStatusEntity = eventStatusRepo.save(eventStatusEntity);
             try {
                 retryAbleNotificationService.send(channel, ChannelEventMapper.toChannelEvent(eventStatusEntity));
-
                 eventStatusRepo.findById(eventStatusEntity.getId()
                 ).ifPresent(e -> {
                     e.setStatus("SENT");
