@@ -1,7 +1,7 @@
 package com.multibank.notification_routing.config;
 
-import com.multibank.notification_routing.service.channel.NotificationChannel;
-import com.multibank.notification_routing.service.enums.Channel;
+import com.multibank.notification_routing.utils.Channel;
+import com.multibank.notification_routing.utils.EventType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,7 +10,7 @@ import java.util.List;
 
 @Configuration
 @ConfigurationProperties(prefix = "routing")
-public class RoutingProperties {
+public class RoutingConfig {
     private List<Rule> rules = new ArrayList<>();
 
     public List<Rule> getRules() {
@@ -50,36 +50,38 @@ public class RoutingProperties {
             this.then = then;
         }
     }
- public static class When {
-        private String eventType;
+
+    public static class When {
+        private EventType eventType;
         private String priority; // HIGH/MEDIUM/LOW
 
-     public String getEventType() {
-         return eventType;
-     }
+        public EventType getEventType() {
+            return eventType;
+        }
 
-     public void setEventType(String eventType) {
-         this.eventType = eventType;
-     }
+        public void setEventType(EventType eventType) {
+            this.eventType = eventType;
+        }
 
-     public String getPriority() {
-         return priority;
-     }
+        public String getPriority() {
+            return priority;
+        }
 
-     public void setPriority(String priority) {
-         this.priority = priority;
-     }
- }
- public static class Then {
+        public void setPriority(String priority) {
+            this.priority = priority;
+        }
+    }
+
+    public static class Then {
         private List<Channel> channels;
 
-     public List<Channel> getChannels() {
-         return channels;
-     }
+        public List<Channel> getChannels() {
+            return channels;
+        }
 
-     public void setChannels(List<Channel> channels) {
-         this.channels = channels;
-     }
+        public void setChannels(List<Channel> channels) {
+            this.channels = channels;
+        }
 
     }
 }

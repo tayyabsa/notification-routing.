@@ -19,9 +19,9 @@ public class EventsController {
 
     @ResponseBody
     @PostMapping(produces = "application/json")
-    public ResponseEntity<EventsResponseDto> processEvents(@RequestBody EventsRequestDto event) {
+    public ResponseEntity<String> processEvents(@RequestBody EventsRequestDto event) {
         eventService.processEvents(event);
-        return ResponseEntity.ok(new EventsResponseDto("SUCCESS"));
+        return ResponseEntity.ok("PROCESSING");
     }
 
     @ResponseBody
@@ -31,9 +31,8 @@ public class EventsController {
     }
 
     @ResponseBody
-    @GetMapping(produces = "application/json")
-    public ResponseEntity<List<String>> getFailedEventsId() {
+    @GetMapping(produces = "application/json", path = "/failed")
+    public ResponseEntity<List<EventsResponseDto>> getFailedEventsId() {
         return ResponseEntity.ok(eventService.getFailedEvents());
     }
-
 }

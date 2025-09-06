@@ -1,11 +1,12 @@
-package com.multibank.notification_routing.dto;
+package com.multibank.notification_routing.service.channel;
 
-import com.multibank.notification_routing.service.channel.ChannelEvent;
 import com.multibank.notification_routing.utils.EventType;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-public class EventsRequestDto {
+public class ChannelEvent {
+
     private Long id;
     private EventType eventType;
     private String payload;
@@ -13,19 +14,26 @@ public class EventsRequestDto {
     private LocalDateTime timestamp;
     private String priority;
 
-    public EventsRequestDto() {
-    }
-
-    public EventsRequestDto(Long id,EventType eventType, String recipient, String priority, String payload) {
+    public ChannelEvent(Long id,EventType eventType, String payload, String recipient, LocalDateTime timestamp, String priority) {
+        this.id = id;
         this.eventType = eventType;
         this.payload = payload;
         this.recipient = recipient;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
         this.priority = priority;
+    }
+
+    public ChannelEvent() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
         this.id = id;
     }
 
-    // Getters and setters
     public EventType getEventType() {
         return eventType;
     }
@@ -64,13 +72,5 @@ public class EventsRequestDto {
 
     public void setPriority(String priority) {
         this.priority = priority;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }

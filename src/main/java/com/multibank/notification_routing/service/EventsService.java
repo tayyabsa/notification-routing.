@@ -5,22 +5,17 @@ import com.multibank.notification_routing.dto.EventsResponseDto;
 import com.multibank.notification_routing.repository.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
+import com.multibank.notification_routing.utils.ChannelEventMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Service
 public class EventsService {
-
-    @Value("${retry.maxAttempts}")
-    private Integer maxAttempts;
 
     @Autowired
     private RoutingEngineService routingEngineService;
@@ -28,70 +23,37 @@ public class EventsService {
     @Autowired
     private EventStatusRepo eventStatusRepo;
 
-    public void processFailures() {
-        List<EventStatusEntity> failedEvents =
-                eventStatusRepo.findByStatusAndIsDeadLetter("FAILED", false);
-
-        failedEvents.stream()
-                .collect(Collectors.partitioningBy(e ->
-                        Optional.ofNullable(e.getRetryCount()).orElse(0) < maxAttempts
-                ))
-                .forEach((shouldRetry, events) -> {
-                    if (shouldRetry) {
-                        // map to DTOs and process
-                        events.stream()
-                                .map(this::toDto)
-                                .forEach(this::processEvents);
-                    } else {
-                        // mark as dead letter in bulk
-                        events.forEach(e -> e.setIsDeadLetter(true));
-                        eventStatusRepo.saveAll(events);
-                        events.forEach(e ->
-                                System.out.println("Max retry attempts reached for event ID: " + e.getId())
-                        );
-                    }
-                });
-    }
+    @Autowired
+    private RetryAbleNotificationService retryAbleNotificationService;
 
     @Async
     public void processEvents(EventsRequestDto event) {
 
-        List<NotificationChannel> channels = routingEngineService.route(event);
+        List<NotificationChannel> channels = routingEngineService.route(event.getEventType(), event.getPriority());
         for (NotificationChannel channel : channels) {
+            EventStatusEntity eventStatusEntity = new EventStatusEntity();
+            eventStatusEntity.setEventType(event.getEventType());
+            eventStatusEntity.setRetryCount(0);
+            eventStatusEntity.setRecipient(event.getRecipient());
+            eventStatusEntity.setPriority(event.getPriority());
+            eventStatusEntity.setPayload(event.getPayload());
+            eventStatusEntity.setStatus("PENDING");
+            eventStatusEntity.setChannel(channel.channel().toString());
+            eventStatusEntity.setIsDeadLetter(false);
+            eventStatusEntity = eventStatusRepo.save(eventStatusEntity);
             try {
-                Boolean status = channel.send(event);
-                Optional<EventStatusEntity> eventStatus = eventStatusRepo.findById(event.getId());
-                if (eventStatus.isPresent()) {
-                    EventStatusEntity existingEntity = eventStatus.get();
-                    existingEntity.setRetryCount(existingEntity.getRetryCount() + 1);
-                    existingEntity.setStatus(status ? "SENT" : "FAILED");
-                    eventStatusRepo.save(existingEntity);
-                } else {
-                    EventStatusEntity eventStatusEntity = new EventStatusEntity();
-                    eventStatusEntity.setEventType(event.getEventType());
-                    eventStatusEntity.setRetryCount(0);
-                    eventStatusEntity.setStatus(status ? "SENT" : "FAILED");
-                    eventStatusEntity.setRecipient(event.getRecipient());
-                    eventStatusEntity.setPriority(event.getPriority());
-                    eventStatusEntity.setPayload(event.getPayload());
-                    eventStatusRepo.save(eventStatusEntity);
-                }
+                retryAbleNotificationService.send(channel, ChannelEventMapper.toChannelEvent(eventStatusEntity));
+
+                eventStatusRepo.findById(eventStatusEntity.getId()
+                ).ifPresent(e -> {
+                    e.setStatus("SENT");
+                    eventStatusRepo.save(e);
+                });
             } catch (Exception e) {
-                System.err.println("Failed to send notification via " + channel.channel() + " for " + event.getRecipient());
-                e.printStackTrace();
+                System.err.println("Failed to send notification for " + event.getRecipient());
             }
         }
         System.out.println("Event processed: " + event.getEventType() + " for " + event.getRecipient());
-    }
-
-    private EventsRequestDto toDto(EventStatusEntity e) {
-        EventsRequestDto dto = new EventsRequestDto();
-        dto.setId(e.getId());
-        dto.setEventType(e.getEventType());
-        dto.setPriority(e.getPriority());
-        dto.setRecipient(e.getRecipient());
-        dto.setPayload(e.getPayload());
-        return dto;
     }
 
     public EventsResponseDto getEventStatusById(String id) {
@@ -103,12 +65,12 @@ public class EventsService {
         }
     }
 
-    public List<String> getFailedEvents() {
+    public List<EventsResponseDto> getFailedEvents() {
 
         List<EventStatusEntity> events = eventStatusRepo.findByStatus("FAILED");
         if (!events.isEmpty()) {
             return events.stream()
-                    .map(e -> e.getId().toString())
+                    .map(ChannelEventMapper::toEventsResponseDto)
                     .collect(Collectors.toList());
         } else {
             throw new RuntimeException("No failed events found");

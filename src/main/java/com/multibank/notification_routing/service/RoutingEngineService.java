@@ -1,10 +1,10 @@
 package com.multibank.notification_routing.service;
 
-import com.multibank.notification_routing.config.RoutingProperties;
-import com.multibank.notification_routing.dto.EventsRequestDto;
+import com.multibank.notification_routing.config.RoutingConfig;
 import com.multibank.notification_routing.service.channel.ChannelFactory;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
-import com.multibank.notification_routing.service.enums.Channel;
+import com.multibank.notification_routing.utils.Channel;
+import com.multibank.notification_routing.utils.EventType;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
@@ -13,18 +13,16 @@ import java.util.Set;
 
 @Service
 public class RoutingEngineService {
-    private final RoutingProperties routingProperties;
+    private final RoutingConfig routingConfig;
 
-    public RoutingEngineService(RoutingProperties routingProperties) {
-        this.routingProperties = routingProperties;
+    public RoutingEngineService(RoutingConfig routingConfig) {
+        this.routingConfig = routingConfig;
     }
 
-    public List<NotificationChannel> route(EventsRequestDto event) {
+    public List<NotificationChannel> route(EventType eventType, String priority) {
         Set<Channel> channels = new LinkedHashSet<>();
-
-        // Loop through all configured rules
-        for (RoutingProperties.Rule rule : routingProperties.getRules()) {
-            boolean matches = matchesRule(rule.getWhen(), event);
+        for (RoutingConfig.Rule rule : routingConfig.getRules()) {
+            boolean matches = matchesRule(rule.getWhen(), eventType, priority);
 
             if (matches) {
                 channels.addAll(rule.getThen().getChannels());
@@ -34,12 +32,12 @@ public class RoutingEngineService {
         return ChannelFactory.getChannels(channels);
     }
 
-    private boolean matchesRule(RoutingProperties.When when, EventsRequestDto event) {
-        // null means "don't care"
-        boolean eventTypeMatches = (when.getEventType() == null ||
-                when.getEventType().equalsIgnoreCase(event.getEventType().toString()));
+    private boolean matchesRule(RoutingConfig.When when, EventType eventType, String priority) {
+
+        boolean eventTypeMatches = eventType == when.getEventType(); // Correct enum comparison
         boolean priorityMatches = (when.getPriority() == null ||
-                when.getPriority().equals(event.getPriority()));
+                when.getPriority().equals(priority));
         return eventTypeMatches && priorityMatches;
     }
+
 }

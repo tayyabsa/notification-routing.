@@ -8,10 +8,11 @@ spring:
     password:
     driver-class-name: org.h2.Driver
   jpa:
+    properties:
+      hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform
     hibernate:
       ddl-auto: update
     show-sql: true
-
   h2:
     console:
       enabled: true
@@ -42,5 +43,7 @@ routing:
       then:
         channels: [ "EMAIL" ]
 retry:
-  maxAttempts: 4
+  maxAttempts: 2
+  initialBackoffMs: 500
+  multiplier: 2.0
 
