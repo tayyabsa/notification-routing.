@@ -2,10 +2,12 @@ package com.multibank.notification_routing.service;
 
 import com.multibank.notification_routing.dto.EventsRequestDto;
 import com.multibank.notification_routing.dto.EventsResponseDto;
+import com.multibank.notification_routing.exception.ApplicationException;
 import com.multibank.notification_routing.repository.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.ChannelEventMapper;
+import com.multibank.notification_routing.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -61,7 +63,7 @@ public class EventsService {
         if (eventStatus.isPresent()) {
             return new EventsResponseDto(eventStatus.get().getStatus());
         } else {
-            throw new RuntimeException("Event not found with ID: " + id);
+            throw new ApplicationException(Constants.ERROR_CODE_NOT_FOUND, "Event not found with ID: " + id);
         }
     }
 
@@ -73,7 +75,7 @@ public class EventsService {
                     .map(ChannelEventMapper::toEventsResponseDto)
                     .collect(Collectors.toList());
         } else {
-            throw new RuntimeException("No failed events found");
+            throw new ApplicationException(Constants.ERROR_CODE_NOT_FOUND, "No failed events found");
         }
     }
 }

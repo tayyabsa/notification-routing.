@@ -1,10 +1,12 @@
 package com.multibank.notification_routing.service;
 
 
+import com.multibank.notification_routing.exception.ApplicationException;
 import com.multibank.notification_routing.repository.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.ChannelEvent;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
+import com.multibank.notification_routing.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -55,6 +57,6 @@ public class RetryAbleNotificationService {
             eventStatusRepo.saveAndFlush(entity);
         }
         System.err.println("Retries exhausted. Event moved to dead-letter. Reason: " + ex.getMessage());
-        throw new RuntimeException(ex);
+        throw new ApplicationException(Constants.ERROR_CODE_BAD_REQUEST,ex.toString());
     }
 }
