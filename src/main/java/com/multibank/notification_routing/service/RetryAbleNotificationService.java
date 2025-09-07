@@ -12,7 +12,6 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
 
 @Service
@@ -21,9 +20,8 @@ public class RetryAbleNotificationService {
     @Autowired
     private EventStatusRepo eventStatusRepo;
 
-    // The "public API" for callers. Keep this method name the same you already use.
     @Retryable(
-            value = {Exception.class}, // customize exception list as needed
+            value = {Exception.class},
             maxAttemptsExpression = "#{@retryConfig.maxAttempts}",
             backoff = @Backoff(
                     delayExpression = "#{@retryConfig.initialBackoffMs}",
@@ -46,7 +44,6 @@ public class RetryAbleNotificationService {
         }
     }
 
-    // Optional: called after retries are exhausted (same arg list as send)
     @Recover
     public void recover(Exception ex,NotificationChannel channel, ChannelEvent event) {
         Optional<EventStatusEntity> eventStatusEntity = eventStatusRepo.findById(event.getId());
