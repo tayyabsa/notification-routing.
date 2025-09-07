@@ -1,10 +1,8 @@
 package com.multibank.notification_routing.repository;
 
-import com.multibank.notification_routing.dto.EventsRequestDto;
 import com.multibank.notification_routing.utils.EventType;
 import jakarta.persistence.*;
 
-import java.util.UUID;
 
 @Entity
 public class EventStatusEntity {
