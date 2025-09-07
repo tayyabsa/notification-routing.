@@ -4,8 +4,10 @@ import com.multibank.notification_routing.dto.EventsRequestDto;
 import com.multibank.notification_routing.dto.EventsResponseDto;
 import com.multibank.notification_routing.exception.ApplicationException;
 import com.multibank.notification_routing.lock.RedissonLockManager;
-import com.multibank.notification_routing.repository.EventStatusEntity;
+import com.multibank.notification_routing.repository.RecipientRepo;
+import com.multibank.notification_routing.repository.model.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
+import com.multibank.notification_routing.repository.model.RecipientEntity;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.ChannelEventMapper;
 import com.multibank.notification_routing.utils.Constants;
@@ -29,6 +31,9 @@ public class EventsService {
     private EventStatusRepo eventStatusRepo;
 
     @Autowired
+    private RecipientRepo recipientRepo;
+
+    @Autowired
     private RetryAbleNotificationService retryAbleNotificationService;
 
     @Autowired
@@ -46,7 +51,7 @@ public class EventsService {
                         EventStatusEntity eventStatusEntity = new EventStatusEntity();
                         eventStatusEntity.setEventType(event.getEventType());
                         eventStatusEntity.setRetryCount(0);
-                        eventStatusEntity.setRecipient(event.getRecipient());
+                        eventStatusEntity.setRecipient(getRecipient(event.getRecipient(), channel.channel().toString()));
                         eventStatusEntity.setPriority(event.getPriority());
                         eventStatusEntity.setPayload(event.getPayload());
                         eventStatusEntity.setStatus("PENDING");
@@ -91,6 +96,21 @@ public class EventsService {
                     .collect(Collectors.toList());
         } else {
             throw new ApplicationException(Constants.ERROR_CODE_NOT_FOUND, "No failed events found");
+        }
+    }
+
+    private String getRecipient(String recipientId, String channel) {
+        Optional<RecipientEntity> recipient = recipientRepo.findByRecipientId(recipientId);
+        if (recipient.isPresent()) {
+            return switch (channel) {
+                case "EMAIL" -> recipient.get().getEmail();
+                case "SMS" -> recipient.get().getPhoneNumber();
+                case "PUSH" -> recipient.get().getPushToken();
+                default ->
+                        throw new ApplicationException(Constants.ERROR_CODE_BAD_REQUEST, "Unsupported channel: " + channel);
+            };
+        } else {
+            throw new ApplicationException(Constants.ERROR_CODE_NOT_FOUND, "Recipient not found with ID: " + recipientId);
         }
     }
 }

@@ -2,7 +2,7 @@ package com.multibank.notification_routing.utils;
 
 import com.multibank.notification_routing.dto.EventsRequestDto;
 import com.multibank.notification_routing.dto.EventsResponseDto;
-import com.multibank.notification_routing.repository.EventStatusEntity;
+import com.multibank.notification_routing.repository.model.EventStatusEntity;
 import com.multibank.notification_routing.service.channel.ChannelEvent;
 
 /**

@@ -2,7 +2,7 @@ package com.multibank.notification_routing.service;
 
 
 import com.multibank.notification_routing.exception.ApplicationException;
-import com.multibank.notification_routing.repository.EventStatusEntity;
+import com.multibank.notification_routing.repository.model.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.ChannelEvent;
 import com.multibank.notification_routing.service.channel.NotificationChannel;

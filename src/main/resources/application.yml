@@ -13,6 +13,11 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      data-locations:   classpath:/db/data.sql       # optional if you use data.sql at root
   h2:
     console:
       enabled: true
