@@ -47,3 +47,7 @@ retry:
   initialBackoffMs: 500
   multiplier: 2.0
 
+redis:
+  server:
+    url: 127.0.0.1:6379
+

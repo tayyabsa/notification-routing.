@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
@@ -28,6 +29,7 @@ public class RetryAbleNotificationService {
                     multiplierExpression = "#{@retryConfig.multiplier}"
             )
     )
+
     public void send(NotificationChannel channel, ChannelEvent event) throws Exception {
         System.out.println("Attempting to send event via " + event.getPayload());
         try {

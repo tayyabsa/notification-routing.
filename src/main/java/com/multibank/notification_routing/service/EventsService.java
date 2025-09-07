@@ -3,6 +3,7 @@ package com.multibank.notification_routing.service;
 import com.multibank.notification_routing.dto.EventsRequestDto;
 import com.multibank.notification_routing.dto.EventsResponseDto;
 import com.multibank.notification_routing.exception.ApplicationException;
+import com.multibank.notification_routing.lock.RedissonLockManager;
 import com.multibank.notification_routing.repository.EventStatusEntity;
 import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
@@ -28,30 +29,43 @@ public class EventsService {
     @Autowired
     private RetryAbleNotificationService retryAbleNotificationService;
 
+    @Autowired
+    private RedissonLockManager lockManager;
+
     @Async
     public void processEvents(EventsRequestDto event) {
-
         List<NotificationChannel> channels = routingEngineService.route(event.getEventType(), event.getPriority());
         for (NotificationChannel channel : channels) {
-            EventStatusEntity eventStatusEntity = new EventStatusEntity();
-            eventStatusEntity.setEventType(event.getEventType());
-            eventStatusEntity.setRetryCount(0);
-            eventStatusEntity.setRecipient(event.getRecipient());
-            eventStatusEntity.setPriority(event.getPriority());
-            eventStatusEntity.setPayload(event.getPayload());
-            eventStatusEntity.setStatus("PENDING");
-            eventStatusEntity.setChannel(channel.channel().toString());
-            eventStatusEntity.setIsDeadLetter(false);
-            eventStatusEntity = eventStatusRepo.save(eventStatusEntity);
-            try {
-                retryAbleNotificationService.send(channel, ChannelEventMapper.toChannelEvent(eventStatusEntity));
-                eventStatusRepo.findById(eventStatusEntity.getId()
-                ).ifPresent(e -> {
-                    e.setStatus("SENT");
-                    eventStatusRepo.save(e);
-                });
-            } catch (Exception e) {
-                System.err.println("Failed to send notification for " + event.getRecipient());
+            boolean lockAcquired = lockManager.lock(Constants.LOCK_KEY_PREFIX + event.getId(), Constants.DEFAULT_TTL_IN_MILLIS);
+            if (lockAcquired) {
+                try {
+                    Optional<EventStatusEntity> eventStatus = eventStatusRepo.findByEventIdAndChannel(event.getId().toString(), channel.channel().toString());
+                    if (eventStatus.isEmpty()) {
+                        EventStatusEntity eventStatusEntity = new EventStatusEntity();
+                        eventStatusEntity.setEventType(event.getEventType());
+                        eventStatusEntity.setRetryCount(0);
+                        eventStatusEntity.setRecipient(event.getRecipient());
+                        eventStatusEntity.setPriority(event.getPriority());
+                        eventStatusEntity.setPayload(event.getPayload());
+                        eventStatusEntity.setStatus("PENDING");
+                        eventStatusEntity.setChannel(channel.channel().toString());
+                        eventStatusEntity.setIsDeadLetter(false);
+                        eventStatusEntity.setEventId(event.getId().toString());
+                        eventStatusEntity = eventStatusRepo.save(eventStatusEntity);
+                        try {
+                            retryAbleNotificationService.send(channel, ChannelEventMapper.toChannelEvent(eventStatusEntity));
+                            eventStatusRepo.findById(eventStatusEntity.getId()
+                            ).ifPresent(e -> {
+                                e.setStatus("SENT");
+                                eventStatusRepo.save(e);
+                            });
+                        } catch (Exception e) {
+                            System.err.println("Failed to send notification for " + event.getRecipient());
+                        }
+                    }
+                } finally {
+                    lockManager.unlock(Constants.LOCK_KEY_PREFIX + event.getId());
+                }
             }
         }
         System.out.println("Event processed: " + event.getEventType() + " for " + event.getRecipient());

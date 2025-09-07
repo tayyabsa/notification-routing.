@@ -15,6 +15,9 @@ public class EventStatusEntity {
     @Column(nullable = false)
     private EventType eventType;
 
+    @Column
+    private String eventId;
+
     @Column(nullable = false)
     private String status;
 
@@ -98,4 +101,6 @@ public class EventStatusEntity {
         this.channel = channel;
     }
 
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
 }

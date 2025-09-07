@@ -12,6 +12,7 @@ public class EventsRequestDto {
     private String recipient;
     private LocalDateTime timestamp;
     private String priority;
+    private String idempotencyKey;
 
     public EventsRequestDto() {
     }
