@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class EvenServiceTest {
+class EventServiceTest {
 
     @InjectMocks
     private EventsService eventsService;
