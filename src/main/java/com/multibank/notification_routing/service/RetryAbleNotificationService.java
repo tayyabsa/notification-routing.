@@ -36,7 +36,7 @@ public class RetryAbleNotificationService {
         try {
             channel.doSend(event);
         } catch (Exception e) {
-            System.err.println("Send failed: " + e.getMessage());
+            log.error("Send failed: {}", e.getMessage());
             Optional<EventStatusEntity> eventStatusEntity = eventStatusRepo.findById(event.getId());
             if(eventStatusEntity.isPresent()) {
                 EventStatusEntity entity = eventStatusEntity.get();

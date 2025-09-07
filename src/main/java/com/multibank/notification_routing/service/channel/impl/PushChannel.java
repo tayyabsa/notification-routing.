@@ -3,8 +3,10 @@ package com.multibank.notification_routing.service.channel.impl;
 import com.multibank.notification_routing.service.channel.ChannelEvent;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class PushChannel implements NotificationChannel {
 
@@ -20,7 +22,7 @@ public class PushChannel implements NotificationChannel {
             throw new Exception("Simulated email sending failure");
         }
         String message = formatEvent(event);
-        System.out.println("🔔 Sending PUSH to " + event.getRecipient() + " : " + message);
+        log.info("\uD83D\uDD14 Sending PUSH to {} : {}", event.getRecipient(), message);
     }
 
     @Override
