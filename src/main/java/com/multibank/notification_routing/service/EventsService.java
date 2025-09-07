@@ -9,6 +9,7 @@ import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.ChannelEventMapper;
 import com.multibank.notification_routing.utils.Constants;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class EventsService {
 
@@ -60,7 +62,7 @@ public class EventsService {
                                 eventStatusRepo.save(e);
                             });
                         } catch (Exception e) {
-                            System.err.println("Failed to send notification for " + event.getRecipient());
+                            log.error("Failed to send notification for {}", event.getRecipient());
                         }
                     }
                 } finally {
@@ -68,7 +70,7 @@ public class EventsService {
                 }
             }
         }
-        System.out.println("Event processed: " + event.getEventType() + " for " + event.getRecipient());
+        log.info("Event processed: {} for {}", event.getEventType(), event.getRecipient());
     }
 
     public EventsResponseDto getEventStatusById(String id) {

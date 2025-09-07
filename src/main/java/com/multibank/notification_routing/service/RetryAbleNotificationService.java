@@ -7,14 +7,15 @@ import com.multibank.notification_routing.repository.EventStatusRepo;
 import com.multibank.notification_routing.service.channel.ChannelEvent;
 import com.multibank.notification_routing.service.channel.NotificationChannel;
 import com.multibank.notification_routing.utils.Constants;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class RetryAbleNotificationService {
 
@@ -31,7 +32,7 @@ public class RetryAbleNotificationService {
     )
 
     public void send(NotificationChannel channel, ChannelEvent event) throws Exception {
-        System.out.println("Attempting to send event via " + event.getPayload());
+        log.info("Attempting to send event via {}", event.getPayload());
         try {
             channel.doSend(event);
         } catch (Exception e) {
@@ -55,7 +56,7 @@ public class RetryAbleNotificationService {
             entity.setIsDeadLetter(true);
             eventStatusRepo.saveAndFlush(entity);
         }
-        System.err.println("Retries exhausted. Event moved to dead-letter. Reason: " + ex.getMessage());
+        log.error("Retries exhausted. Event moved to dead-letter. Reason: {}", ex.getMessage());
         throw new ApplicationException(Constants.ERROR_CODE_BAD_REQUEST,ex.toString());
     }
 }
